@@ -1,8 +1,8 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 public class Player : MonoBehaviour
 {
     [SerializeField]
@@ -20,7 +20,6 @@ public class Player : MonoBehaviour
     private CharacterController characterController;
     private Animator animator;
 
-
     // Start is called before the first frame update
     void Start()
     {
@@ -33,29 +32,36 @@ public class Player : MonoBehaviour
     {
         Move();
         Rotate();
-
     }
 
     public void OnMove(InputAction.CallbackContext context)
     {
         moveVector = context.ReadValue<Vector2>();
-        if (moveVector.magnitude > 0)
-        {
-            animator.SetBool("isWalking", true);
-        }
-        else
-        {
-            animator.SetBool("isWalking", false);
-        }
+        animator.SetBool("isWalking", moveVector.magnitude > 0);
     }
 
     private void Move()
     {
-        verticalVelocity += -gravity * Time.deltaTime;
-        if (characterController.isGrounded && verticalVelocity < 0)
+        // Handle vertical velocity
+        if (characterController.isGrounded)
         {
-            verticalVelocity = -0.1f * gravity * Time.deltaTime;
+            if (verticalVelocity < 0)
+            {
+                verticalVelocity = -0.1f; // Small value to keep the character grounded
+            }
+
+            // Jump logic
+            if (Input.GetButtonDown("Jump")) // Use Input.GetButtonDown for jumping
+            {
+                Jump();
+            }
         }
+        else
+        {
+            verticalVelocity += -gravity * Time.deltaTime;
+        }
+
+        // Calculate movement
         Vector3 move = transform.right * moveVector.x + transform.forward * moveVector.y + transform.up * verticalVelocity;
         characterController.Move(move * moveSpeed * Time.deltaTime);
     }
@@ -63,7 +69,6 @@ public class Player : MonoBehaviour
     public void OnLook(InputAction.CallbackContext context)
     {
         lookVector = context.ReadValue<Vector2>();
-
     }
 
     private void Rotate()
@@ -72,17 +77,9 @@ public class Player : MonoBehaviour
         transform.localEulerAngles = rotation;
     }
 
-    public void OnJump(InputAction.CallbackContext context)
-    {
-        if (characterController.isGrounded && context.performed)
-        {
-            animator.Play("Jump");
-            // Jump();
-        }
-    }
-
     private void Jump()
     {
-        verticalVelocity = Mathf.Sqrt(jumpHeight * gravity);
+        verticalVelocity = Mathf.Sqrt(jumpHeight * 2 * gravity); // Calculate the initial vertical velocity for jumping
+        animator.Play("Jump"); // Trigger the jump animation
     }
 }
